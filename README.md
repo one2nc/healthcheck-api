@@ -2,11 +2,13 @@
 
 Hits a HTTP request to an endpoint and exporters the status code in prometheus metrics format.
 
-## TODO
-1. Instead of reading the target endpoint from env variable, add the functionality to read from json to support list of endpoints.
-2. Need to make async calls for the list of target endpoints.
-
-
 ## How to run?
-- `export INSTAHMS_ENDPOINT="https://instahms1203.instahmsdev.com/instahms/loginForm.do"`
+- `export INPUT_FILE=./endpoints.json`
 - `go run main.go`
+
+## TODO
+- [] Handle signals like ctrl+c
+- [x] Use gorilla mux instead of net/http package
+- [x] Emit metric using prometheus go library ex: `status_code{service_name=<>} 200`
+- [x] Read json file containing list of endpoints to be tested
+- [x] Loop and make concurrent calls to test this endpoint. Wait for the results and send the results
