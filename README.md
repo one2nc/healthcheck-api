@@ -7,7 +7,7 @@ Hits a HTTP request to an endpoint and exporters the status code in prometheus m
 - `go run main.go`
 
 ## TODO
-- [] Handle signals like ctrl+c
+- [ ] Handle signals like ctrl+c
 - [x] Use gorilla mux instead of net/http package
 - [x] Emit metric using prometheus go library ex: `status_code{service_name=<>} 200`
 - [x] Read json file containing list of endpoints to be tested
