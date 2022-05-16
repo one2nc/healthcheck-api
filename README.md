@@ -6,6 +6,9 @@ Hits a HTTP request to an endpoint and exporters the status code in prometheus m
 - `export INPUT_FILE=./endpoints.json`
 - `go run main.go`
 
+### Build for mac
+- `GOOS=darwin GOARCH=amd64 go build -o ./health-check-api-mac`
+
 ## TODO
 - [ ] Handle signals like ctrl+c
 - [x] Use gorilla mux instead of net/http package
