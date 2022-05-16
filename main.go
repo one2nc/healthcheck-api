@@ -49,14 +49,14 @@ func parseJson(filePath string) []InputJson {
 	jsonFile, err := os.ReadFile(filePath)
 	log.Print("[INFO] reading endpoints from a file")
 	if err != nil {
-		log.Fatal(err)
+		log.Panicln("[ERROR] unable to read endpoints from the file got error: ", err)
 	}
 
 	inputJson := []InputJson{}
 	err = json.Unmarshal(jsonFile, &inputJson)
-	log.Print("[INFO] Unmarshalling json")
+	log.Print("[INFO] unmarshalling json")
 	if err != nil {
-		log.Fatal(err)
+		log.Panicln("[ERROR] unable to unmarshal json got error: ", err)
 	}
 	return inputJson
 }
@@ -65,7 +65,7 @@ func getStatusCode(serviceName string, endpoint string) Service {
 	resp, err := http.Get(endpoint)
 	log.Printf("[INFO] making a get request to %v", endpoint)
 	if err != nil {
-		log.Fatal(err)
+		log.Panicln("[ERROR] unable to get status code got error: ", err)
 	}
 
 	return Service{
