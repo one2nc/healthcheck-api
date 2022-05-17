@@ -4,9 +4,11 @@ WORKDIR /app
 
 COPY go.mod ./
 COPY go.sum ./
+COPY ./test_endpoints.json ./
 COPY *.go ./
 
 RUN go mod download && \
+    go test && \
     go build -o ./health-check-api
     
 EXPOSE 8090
