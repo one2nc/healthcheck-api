@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
@@ -92,4 +94,7 @@ func main() {
 	r.Handle("/metrics", promhttp.Handler())
 	log.Print("[INFO] server started at port 8090")
 	log.Fatal(http.ListenAndServe(":8090", r))
+
+	sigChannel := make(chan os.Signal, 1)
+	signal.Notify(sigChannel, os.Interrupt, syscall.SIGTERM)
 }
