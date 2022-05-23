@@ -6,6 +6,9 @@ Hits a HTTP request to an endpoint and exporters the status code in prometheus m
 - `export INPUT_FILE=./endpoints.json`
 - `go run main.go`
 
+### How to run the docker container?
+- `docker run -p 8091:8090 -v <path to endpoints.json>:/app/endpoints.json ghcr.io/one2nc/healthcheck-api:<image_tag>`
+
 ### Build for mac
 - `GOOS=darwin GOARCH=amd64 go build -o ./health-check-api-mac`
 
