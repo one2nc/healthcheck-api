@@ -9,23 +9,6 @@ type Svc struct {
 	Endpoint    string
 }
 
-func TestGetStatusCode(t *testing.T) {
-
-	got := getStatusCode("google", "https://www.google.com")
-	want := Service{}
-
-	want.name = "google"
-	want.statusCode = 200
-
-	if got.name != want.name {
-		t.Errorf("got %q, wanted %q", got, want)
-	}
-
-	if got.statusCode != want.statusCode {
-		t.Errorf("got %q, wanted %q", got, want)
-	}
-}
-
 func TestParseJson(t *testing.T) {
 	got := parseJson("./test_endpoints.json")
 	want := Svc{
