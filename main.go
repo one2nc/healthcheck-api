@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
@@ -92,9 +94,32 @@ func main() {
 	metricExporter()
 	r := mux.NewRouter()
 	r.Handle("/metrics", promhttp.Handler())
-	log.Print("[INFO] server started at port 8090")
-	log.Fatal(http.ListenAndServe(":8090", r))
+
+	srv := &http.Server{
+		Addr:    ":8090",
+		Handler: r,
+	}
 
 	sigChannel := make(chan os.Signal, 1)
-	signal.Notify(sigChannel, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(sigChannel, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+	log.Print("[INFO] server started at port 8090")
+
+	<-sigChannel
+	log.Print("[INFO] received SIGINT signal")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer func() {
+		cancel()
+	}()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("[INFO] server shutdown failed:%+v", err)
+	}
+	log.Print("[INFO] server exited properly")
 }
