@@ -1,0 +1,9 @@
+[{ 
+    "target_services" : [
+            {
+                "service_name": "google",
+                "endpoint": "https://www.google.com/"
+            }
+        ]
+}]
+            

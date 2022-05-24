@@ -1,46 +1,125 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func getStatusCode() string {
-	instahmsEndpoint := os.Getenv("INSTAHMS_ENDPOINT")
-	resp, err := http.Get(instahmsEndpoint)
-	log.Printf("[INFO] making a get request to %v", instahmsEndpoint)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return "status_code " + strconv.Itoa(resp.StatusCode) + "\n"
+type Service struct {
+	name       string
+	statusCode int
 }
 
-func metricExporter(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/metrics" {
-		http.Error(w, "404 not found", http.StatusNotFound)
-		return
+type InputJson struct {
+	TargetServices []struct {
+		ServiceName string `json:"service_name"`
+		Endpoint    string `json:"endpoint"`
+	} `json:"target_services"`
+}
+
+func gaugeVectorInit() prometheus.GaugeVec {
+	metric := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "status_code",
+			Help: "Status Code returned after hitting the target service",
+		},
+		[]string{
+			"service_name",
+		},
+	)
+	log.Printf("[INFO] initializing & registering a new gauge vector")
+	prometheus.MustRegister(metric)
+	return *metric
+}
+
+func addMetrics(svc Service, metric prometheus.GaugeVec) {
+	serviceName := svc.name
+	statusCode := svc.statusCode
+	log.Printf("[INFO] adding metric to gauge vector")
+	metric.With(prometheus.Labels{"service_name": serviceName}).Add(float64(statusCode))
+}
+
+func parseJson(filePath string) []InputJson {
+	jsonFile, err := os.ReadFile(filePath)
+	log.Print("[INFO] reading endpoints from a file")
+	if err != nil {
+		log.Panicln("[ERROR] unable to read endpoints from the file got error: ", err)
 	}
 
-	if r.Method != "GET" {
-		http.Error(w, "405 method not allowed", http.StatusMethodNotAllowed)
-		return
+	inputJson := []InputJson{}
+	err = json.Unmarshal(jsonFile, &inputJson)
+	log.Print("[INFO] unmarshalling json")
+	if err != nil {
+		log.Panicln("[ERROR] unable to unmarshal json got error: ", err)
+	}
+	return inputJson
+}
+
+func getStatusCode(serviceName string, endpoint string) Service {
+	resp, err := http.Get(endpoint)
+	log.Printf("[INFO] making a get request to %v", endpoint)
+	if err != nil {
+		log.Panicln("[ERROR] unable to get status code got error: ", err)
 	}
 
+	return Service{
+		name:       serviceName,
+		statusCode: resp.StatusCode,
+	}
+}
+
+func metricExporter() {
 	log.Print("[INFO] getting status code")
-	resp := getStatusCode()
-	fmt.Fprintf(w, resp)
+	filePath := os.Getenv("INPUT_FILE")
+	inputJson := parseJson(filePath)
+	metric := gaugeVectorInit()
+	for _, v := range inputJson {
+		for _, val := range v.TargetServices {
+			go addMetrics(getStatusCode(val.ServiceName, val.Endpoint), metric)
+		}
+	}
 }
 
 func main() {
+	metricExporter()
+	r := mux.NewRouter()
+	r.Handle("/metrics", promhttp.Handler())
 
-	fmt.Println("Starting health-check server at port 8090")
-	http.HandleFunc("/metrics", metricExporter)
-
-	if err := http.ListenAndServe(":8090", nil); err != nil {
-		log.Fatal(err)
+	srv := &http.Server{
+		Addr:    ":8090",
+		Handler: r,
 	}
+
+	sigChannel := make(chan os.Signal, 1)
+	signal.Notify(sigChannel, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+	log.Print("[INFO] server started at port 8090")
+
+	<-sigChannel
+	log.Print("[INFO] received SIGINT signal")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer func() {
+		cancel()
+	}()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("[INFO] server shutdown failed:%+v", err)
+	}
+	log.Print("[INFO] server exited properly")
 }
