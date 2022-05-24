@@ -13,7 +13,7 @@ Hits a HTTP request to an endpoint and exporters the status code in prometheus m
 - `GOOS=darwin GOARCH=amd64 go build -o ./health-check-api-mac`
 
 ## TODO
-- [ ] Handle signals like ctrl+c
+- [x] Handle signals like ctrl+c
 - [x] Use gorilla mux instead of net/http package
 - [x] Emit metric using prometheus go library ex: `status_code{service_name=<>} 200`
 - [x] Read json file containing list of endpoints to be tested
