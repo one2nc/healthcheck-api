@@ -1,8 +1,8 @@
 [{ 
     "target_services" : [
             {
-                "service_name": "instahms",
-                "endpoint": "https://instahms1203.instahmsdev.com/instahms/loginForm.do"
+                "service_name": "youtube",
+                "endpoint": "https://www.youtube.com/"
             },
             {
                 "service_name": "google",
