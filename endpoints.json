@@ -7,6 +7,14 @@
             {
                 "service_name": "google",
                 "endpoint": "https://www.google.com/"
+            },
+            {
+                "service_name": "tomcat",
+                "endpoint": "https://localtomcat.com/"
+            },
+            {
+                "service_name": "dummy-server",
+                "endpoint": "http://localhost:8080/README"
             }
         ]
 }]
